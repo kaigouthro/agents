@@ -79,21 +79,19 @@ async def ping():
 
 
 async def generate_events(response):
-    msg=""
-    for chat_answer in response:
-        if chat_answer:
-            msg+=chat_answer
-            if chat_answer:
-                new_dict = {
-                        "content": msg,
-                        "type": "chat",
-                        "done": False,
+   msg=""
+   for chat_answer in response:
+      if chat_answer:
+         msg+=chat_answer
+         new_dict = {
+                 "content": msg,
+                 "type": "chat",
+                 "done": False,
 
-                    }
-                json_dict = json.dumps(new_dict, ensure_ascii=False)
-                yield json_dict
-        else:
-            continue
+             }
+         yield json.dumps(new_dict, ensure_ascii=False)
+      else:
+         continue
         
 def init(config): 
     if not os.path.exists("logs"):

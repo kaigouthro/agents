@@ -76,17 +76,18 @@ class Environment:
             self.shared_memory["long_term_memory"][-MAX_CHAT_HISTORY + 1 :]
         )
         summary = self.shared_memory["short_term_memory"]
-        
-        
+
+
         # system prompt = environment prompt + current memory + system prompt
         # current_memory = summary + chat history + relevant history
         current_memory = eval(Environment_summary_memory)
         environment_prompt = self.environment_prompt[current_state_name]
         summary_system_prompt = self.summary_system_prompt[current_state_name]
-        
+
         environment_summary_system_prompt = eval(Environment_summary_system_prompt)
-        response = self.LLMs[current_state_name].get_response(None, environment_summary_system_prompt, stream=False)
-        return response
+        return self.LLMs[current_state_name].get_response(
+            None, environment_summary_system_prompt, stream=False
+        )
 
     def update_memory(self, memory, current_state):
         """

@@ -21,11 +21,9 @@ class Action:
         response = self.response
         send_name = self.name
         send_role = self.role
-        all = ""
-        for res in response:
-            all += res
+        all = "".join(response)
         parse = f"{send_name}:"
-        
+
         # 将里面对话的第三人称删了
         # The third person in the dialogue was deleted.
         while parse in all:
@@ -33,7 +31,6 @@ class Action:
             all = all[index:]
         if not self.is_user:
             print(f"{send_name}({send_role}):{all}")
-        memory = Memory(send_role, send_name, all)
-        return memory
+        return Memory(send_role, send_name, all)
     
     

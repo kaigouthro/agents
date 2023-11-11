@@ -25,7 +25,7 @@ class SingleAgentUI(WebUI):
         super(SingleAgentUI, self).__init__(client_cmd, socket_host, socket_port, bufsize, ui_name)
         self.FIRST = True
         self.first_recieve_from_client()
-        self.data_history = list()
+        self.data_history = []
 
     def btn_send_when_click(self, history, btn_send, text):
         """
@@ -49,18 +49,19 @@ class SingleAgentUI(WebUI):
             self.data_history[-1][agent_name] += token
         else:
             assert False, "Invalid state."
-        render_data = self.render_bubble(history, self.data_history, node_name, render_node_name= state % 10 == 2)
-        return render_data
+        return self.render_bubble(
+            history, self.data_history, node_name, render_node_name=state % 10 == 2
+        )
 
     def btn_send_after_click(self, history, btn_send, text):
         """
         inputs=[self.chatbot, self.btn_send, self.text_user]
         outputs=[self.chatbot, self.btn_send, self.text_user]
         """
-        self.send_message("<USER>"+text)
+        self.send_message(f"<USER>{text}")
         while True:
             data_list: List = self.receive_server.send(None)
-            
+
             for item in data_list:
                 data = eval(item)
                 assert isinstance(data, list)
@@ -68,14 +69,14 @@ class SingleAgentUI(WebUI):
                 assert isinstance(state, int)
                 if state == 30:
                     yield history,\
-                        gr.Button.update(visible=True, interactive=True, value="Send"), \
-                        gr.Textbox.update(visible=True, interactive=True)
+                            gr.Button.update(visible=True, interactive=True, value="Send"), \
+                            gr.Textbox.update(visible=True, interactive=True)
                     return
                 else:
                     history = self.handle_message(history, state, agent_name, token, node_name)
                     yield history, \
-                          gr.Button.update(visible=False, interactive=False), \
-                          gr.Textbox.update(visible=False, interactive=False, value="")
+                              gr.Button.update(visible=False, interactive=False), \
+                              gr.Textbox.update(visible=False, interactive=False, value="")
 
     def btn_reset_when_click(self, history, text, btn_send, btn_reset):
         yield history.append([None, UIHelper.wrap_css("Restarting", name="System")]), \
@@ -88,13 +89,11 @@ class SingleAgentUI(WebUI):
         self.reset()
         self.first_recieve_from_client(reset_mode=True)
         self.FIRST = True
-        content = None
-        if not self.cache["user_first"]:
-            content = self.prepare()
+        content = self.prepare() if not self.cache["user_first"] else None
         return None if content is None else [[None, UIHelper.wrap_css(content, name=self.agent_name)]], \
-            gr.Textbox.update(value="", visible=True, interactive=True), \
-                gr.Button.update(visible=True, interactive=True),\
-                    gr.Button.update(visible=True, interactive=True, value="Restart")
+                gr.Textbox.update(value="", visible=True, interactive=True), \
+                    gr.Button.update(visible=True, interactive=True),\
+                        gr.Button.update(visible=True, interactive=True, value="Restart")
            
     def prepare(self):
         if self.FIRST:
@@ -114,9 +113,7 @@ class SingleAgentUI(WebUI):
     def construct_ui(
         self
     ):
-        content = None
-        if not self.cache["user_first"]:
-            content = self.prepare()
+        content = self.prepare() if not self.cache["user_first"] else None
         with gr.Blocks(css=gc.CSS) as demo:
             with gr.Column():
                 self.chatbot = gr.Chatbot(
@@ -159,7 +156,7 @@ class SingleAgentUI(WebUI):
                 inputs=[self.chatbot, self.btn_send, self.text_user],
                 outputs=[self.chatbot, self.btn_send, self.text_user]
             )
-            
+
             self.btn_reset.click(
                 fn=self.btn_reset_when_click,
                 inputs=[self.chatbot, self.text_user, self.btn_send, self.btn_reset],

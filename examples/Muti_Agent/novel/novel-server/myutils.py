@@ -18,12 +18,10 @@ def extract_tag_names(text):
     for item in matches:
         if item[0] != '/':
             stack.append(item)
-        else:
-
-            if item[1:] in stack:
-                while stack[-1] != item[1:]:
-                    stack.pop()
-                answer.append(stack.pop())
+        elif item[1:] in stack:
+            while stack[-1] != item[1:]:
+                stack.pop()
+            answer.append(stack.pop())
     return answer
 
 def print_log(message: str):
@@ -31,8 +29,7 @@ def print_log(message: str):
 
 def simulation():
     content = ""
-    for i in range(5000):
-        content = f"{content} hello"
+    content = f"{content} hello"
     return {
         'id': 'chatcmpl-6p9XYPYSTTRi0xEviKjjilqrWU2Ve',
         'object': 'chat.completion',
@@ -55,17 +52,14 @@ def new_parse(content:str, labels: list, return_dict:bool=False):
 
     tree = construct_tree(content, add_root_label=True)
     tree.first_label = False
-    if len(labels) == 0 or labels is None:
-        if return_dict:
-            return tree2dict(tree)['root']
-        else:
-
-            return "\n".join(tree2xml(tree).split('\n')[1:-1])
-    else:
-        if return_dict:
-            tree_dict = tree2dict(tree, filter=labels, mode="remain")['root']
-            return tree_dict
-        else:
-            tree_xml = tree2xml(tree, filter=labels, mode="remain")
-            return "\n".join(tree_xml.split('\n')[1:-1])
+    if not labels or labels is None:
+        return (
+            tree2dict(tree)['root']
+            if return_dict
+            else "\n".join(tree2xml(tree).split('\n')[1:-1])
+        )
+    if return_dict:
+        return tree2dict(tree, filter=labels, mode="remain")['root']
+    tree_xml = tree2xml(tree, filter=labels, mode="remain")
+    return "\n".join(tree_xml.split('\n')[1:-1])
 

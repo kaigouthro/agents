@@ -21,10 +21,10 @@ class OpenAILLM(LLM):
         self.PROXY = os.environ["PROXY"]
         self.MAX_CHAT_HISTORY = eval(
             os.environ["MAX_CHAT_HISTORY"]) if "MAX_CHAT_HISTORY" in os.environ else 10
-        
-        self.model = kwargs["model"] if "model" in kwargs else "gpt-3.5-turbo-16k-0613"
-        self.temperature = kwargs["temperature"] if "temperature" in  kwargs else 0.3
-        self.log_path = kwargs["log_path"] if "log_path" in kwargs else "logs"
+
+        self.model = kwargs.get("model", "gpt-3.5-turbo-16k-0613")
+        self.temperature = kwargs.get("temperature", 0.3)
+        self.log_path = kwargs.get("log_path", "logs")
     
 
     def get_stream(self,response, log_path, messages):
@@ -52,21 +52,21 @@ class OpenAILLM(LLM):
         """
         return LLM's response 
         """
-        active_mode = True if ("ACTIVE_MODE" in os.environ and os.environ["ACTIVE_MODE"] == "0") else False
+        active_mode = "ACTIVE_MODE" in os.environ and os.environ["ACTIVE_MODE"] == "0"
         openai.api_key = self.API_KEY
         openai.proxy = self.PROXY
         model = self.model
         temperature = self.temperature
-        
-        
+
+
         if active_mode:
-            system_prompt = system_prompt + "Please keep your reply as concise as possible,Within three sentences, the total word count should not exceed 30"
+            system_prompt = f"{system_prompt}Please keep your reply as concise as possible,Within three sentences, the total word count should not exceed 30"
 
         messages = [{
             "role": "system",
             "content": system_prompt
         }] if system_prompt else []
-        
+
         if chat_history:
             if len(chat_history) >  self.MAX_CHAT_HISTORY:
                 chat_history = chat_history[- self.MAX_CHAT_HISTORY:]
@@ -77,10 +77,10 @@ class OpenAILLM(LLM):
 
         if last_prompt:
             if active_mode:
-                last_prompt = last_prompt + "Please keep your reply as concise as possible,Within three sentences, the total word count should not exceed 30"
+                last_prompt = f"{last_prompt}Please keep your reply as concise as possible,Within three sentences, the total word count should not exceed 30"
             # messages += [{"role": "system", "content": f"{last_prompt}"}]
             messages[-1]["content"] += last_prompt
-        
+
 
         while True:
             try:

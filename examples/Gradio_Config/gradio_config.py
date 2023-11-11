@@ -175,11 +175,7 @@ class GradioConfig:
             main_color = get_main_color(image)
             is_dark = is_dark_color(main_color)
 
-            if is_dark:
-                font_color = "#FFFFFF"
-            else:
-                font_color = "#000000"
-
+            font_color = "#FFFFFF" if is_dark else "#000000"
             return rgb_to_hex(main_color), font_color
 
         return get_color(url)
@@ -359,14 +355,21 @@ class StateConfig:
     STATES_NAME:List[str] = None
     
     @classmethod
-    def _generate_template(cls, types:str)->str:
+    def _generate_template(cls, types:str) -> str:
         # normal: A state with no execution.
         # active-show-up: Active state, and content displayed above the horizontal line.
         # active-show-down: Active state, and content displayed below the horizontal line.
         # active-show-both: Active state, and content displayed both above and below the horizontal line.
         # active-show-none: Active state, with no content displayed above the horizontal line.
-        
-        assert types.lower() in ["normal","active-show-up", "active-show-down", "active-show-both", "active", "active-show-none"]
+
+        assert types.lower() in {
+            "normal",
+            "active-show-up",
+            "active-show-down",
+            "active-show-both",
+            "active",
+            "active-show-none",
+        }
         both_templates = """<li class="active" style="--gradient-start: {}%; --gradient-end: {}%;">
 	<div class="data-content">
 		<center>
@@ -399,7 +402,7 @@ class StateConfig:
         return templates
             
     @classmethod
-    def update_states(cls, current_states:List[int], current_templates:List[str], show_content:List[Tuple[str]])->str:
+    def update_states(cls, current_states:List[int], current_templates:List[str], show_content:List[Tuple[str]]) -> str:
         assert len(current_states) == len(current_templates)
         # You can dynamically change the number of states.
         # assert len(current_states) == len(cls.STATES_NAME)
@@ -416,7 +419,7 @@ class StateConfig:
                 new_code = f"{cls._generate_template('normal').format(cls.STATES_NAME[idx])}"
             else:
                 new_code = f"{cls._generate_template(current_templates[idx]).format(current_states[idx-1], 100-current_states[idx-1],*(show_content[idx-1]), cls.STATES_NAME[idx])}"
-            if current_states[idx-1] != 100 or (current_states[idx]==0 and current_states[idx-1]==100):
+            if current_states[idx - 1] != 100 or current_states[idx] == 0:
                 new_code = new_code.replace("""li class="active" ""","""li """)
             css_code.append(new_code)
         return "\n".join(css_code)
@@ -433,5 +436,3 @@ class StateConfig:
         return css_code
     
 
-if __name__ == '__main__':
-    pass

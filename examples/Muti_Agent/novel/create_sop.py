@@ -19,19 +19,15 @@ def create_sop(folder_name: str = "novel_outline", encoding: str = "utf-8", save
 
     plot_list_new = []
     for plot_name in plot_list:
-        legal = True
         with open(os.path.join(folder, plot_name), 'r', encoding=encoding) as f:
             plot = json.load(f)
         c_mentioned = plot["characters"]
-        for c in c_mentioned:
-            if c not in character_settings:
-                legal = False
-                break
+        legal = all(c in character_settings for c in c_mentioned)
         if legal:
             plot_list_new.append(plot_name)
     plot_list = plot_list_new
     plot_list.sort()
-            
+
 
     # creat json file of sop
     sop_file = f"./{save_name}.json"
@@ -61,7 +57,7 @@ def create_sop(folder_name: str = "novel_outline", encoding: str = "utf-8", save
             }
         }
     }
-    
+
     nodes_num = len(plot_list)
     # nodes_num = 4 if nodes_num > 4 else nodes_num
     plot_list_new = []
@@ -75,8 +71,8 @@ def create_sop(folder_name: str = "novel_outline", encoding: str = "utf-8", save
             plot_list_new.append(plot_file)
     plot_list = plot_list_new
     nodes_num = len(plot_list)
-    nodes_num = 4 if nodes_num > 4 else nodes_num
-    
+    nodes_num = min(nodes_num, 4)
+
     for i in range(nodes_num):
         node_name = f"state{i+1}"
         plot_file = plot_list[i]
@@ -90,7 +86,7 @@ def create_sop(folder_name: str = "novel_outline", encoding: str = "utf-8", save
         if "roles" not in sop_dict["agents"]["Director"]:
             sop_dict["agents"]["Director"]["roles"] = {}
         sop_dict["agents"]["Director"]["roles"][node_name] = "Director"
-        
+
         for c in c_mentioned:
             if c not in sop_dict["agents"]:
                 sop_dict["agents"][c] = {}
@@ -101,12 +97,11 @@ def create_sop(folder_name: str = "novel_outline", encoding: str = "utf-8", save
             sop_dict["agents"][c]["roles"][node_name] = c
 
     for i in range(nodes_num):
+        node_name = f"state{i+1}"
         if i == nodes_num - 1:
-            node_name = f"state{i+1}"
             sop_dict["relations"][node_name] = {"0": node_name, "1": "end_state"}
             sop_dict["relations"]["end_state"] = {"0": "end_state"}
         else:
-            node_name = f"state{i+1}"
             sop_dict["relations"][node_name] = {"0": node_name, "1": f"state{i+2}"}
 
 
@@ -115,21 +110,24 @@ def create_sop(folder_name: str = "novel_outline", encoding: str = "utf-8", save
         plot_file = plot_list[i]
         with open(os.path.join(folder, plot_file), 'r', encoding=encoding) as f:
             plot = json.load(f)
-        plot_content = plot["plot"] 
+        plot_content = plot["plot"]
         c_mentioned = plot["characters"]
 
         c_string = ", ".join(c_mentioned)
-        sop_dict["states"][node_name] = {"begin_role" : "Director", "begin_query" : "<Director>I'm going to start posting performance instructions now, so please follow my instructions, actors and actresses.</Director>", }
-        sop_dict["states"][node_name]["environment_prompt"] = f"The current scene is a playing of a \"script\", with the main characters involved: Director, {c_string}. The content of the \"script\" that these characters need to play is: \"{plot_content}\". The characters have to act out the \"script\" together. One character performs in each round."
-        sop_dict["states"][node_name]["name"] = node_name
-        sop_dict["states"][node_name]["roles"] = ["Director"] + c_mentioned
-        sop_dict["states"][node_name]["LLM_type"] = "OpenAI"
-        sop_dict["states"][node_name]["LLM"] = {
+        sop_dict["states"][node_name] = {
+            "begin_role": "Director",
+            "begin_query": "<Director>I'm going to start posting performance instructions now, so please follow my instructions, actors and actresses.</Director>",
+            "environment_prompt": f'The current scene is a playing of a \"script\", with the main characters involved: Director, {c_string}. The content of the \"script\" that these characters need to play is: \"{plot_content}\". The characters have to act out the \"script\" together. One character performs in each round.',
+            "name": node_name,
+            "roles": ["Director"] + c_mentioned,
+            "LLM_type": "OpenAI",
+            "LLM": {
                 "temperature": 1.0,
                 "model": "gpt-3.5-turbo-16k-0613",
-                "log_path": f"logs/{node_name}"
-            }
-        sop_dict["states"][node_name]["agent_states"] = {}
+                "log_path": f"logs/{node_name}",
+            },
+            "agent_states": {},
+        }
         sop_dict["states"][node_name]["agent_states"]["Director"] = {
                         "LLM_type": "OpenAI",
                         "LLM": {
@@ -176,10 +174,11 @@ def create_sop(folder_name: str = "novel_outline", encoding: str = "utf-8", save
                         "last_prompt": f"Remember, your identity is {c} and you can only output content on behalf of {c}, the output format is \n<{c}>\n....\n</{c}>\n Just output one round of dialog!\nWhen the current instruction posted by the Director does not specify you to perform or when you think the current instruction from the Director does not require you to perform, you need to output \n<{c}>\nNULL\n</{c}>\n"
                         }
                     }
-        
-        c_call_string = ""
-        for c in c_mentioned:
-            c_call_string += f", if it is {c}, then output <output>{c}</output>"
+
+        c_call_string = "".join(
+            f", if it is {c}, then output <output>{c}</output>"
+            for c in c_mentioned
+        )
         c_string_2 = ", ".join(c_mentioned)
 
         sop_dict["states"][node_name]["controller"] = {
@@ -192,7 +191,7 @@ def create_sop(folder_name: str = "novel_outline", encoding: str = "utf-8", save
                     "call_last_prompt": f"Depending on the current status of the performance process, you need to determine whose turn it is to output the content, if it is the Director, then output <output>Director</output>{c_call_string}, {c_string_2} are actors, you should let the Director output the performance instruction first each time, and then arrange which actor to output the content for the next round according to the specified person in the Director's instruction, you may need to arrange the actor to perform the performance for several rounds after the Director has given the instruction. When the actors' several rounds of output contents have finished the last instruction, you should let the Director continue to output the instruction.",
                     "call_extract_words": "output"
                     }
-        
+
     # save
     json_obj = json.dumps(sop_dict, ensure_ascii=False, indent=4, )
     with open(sop_file, 'w') as f:

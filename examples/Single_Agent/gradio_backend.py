@@ -21,8 +21,7 @@ def process(action):
         response = response[index:]
     if not action.is_user:
         print(f"{send_name}({send_role}):{response}")
-    memory = Memory(send_role, send_name, response)
-    return memory
+    return Memory(send_role, send_name, response)
 
 def gradio_process(action,current_state):
     response = action.response
@@ -31,7 +30,7 @@ def gradio_process(action,current_state):
     response_list = [response]
     if "recommend" in res_dict:
         response_list.append(res_dict["recommend"])
-        
+
     i = 0
     for r in response_list:
         for res in r:
@@ -49,11 +48,14 @@ def gradio_process(action,current_state):
             if state == 30:
                 # print("client: waiting for input.")
                 data: list = next(Client.receive_server)
-                content = ""
-                for item in data:
-                    if item.startswith("<USER>"):
-                        content = item.split("<USER>")[1]
-                        break
+                content = next(
+                    (
+                        item.split("<USER>")[1]
+                        for item in data
+                        if item.startswith("<USER>")
+                    ),
+                    "",
+                )
                 # print(f"client: recieved `{content}` from server.")
                 action.response = content
                 break

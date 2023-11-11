@@ -125,9 +125,8 @@ class CustomizeComponent(PromptComponent):
         self.keywords = keywords
 
     def get_prompt(self, agent):
-        template_keyword = {}
-        for keyword in self.keywords:
-            
-            current_keyword = agent.environment.shared_memory[keyword]
-            template_keyword[keyword] = current_keyword
+        template_keyword = {
+            keyword: agent.environment.shared_memory[keyword]
+            for keyword in self.keywords
+        }
         return self.template.format(**template_keyword)

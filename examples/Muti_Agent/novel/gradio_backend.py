@@ -34,18 +34,14 @@ def show_in_gradio(state, name, chunk, node_name):
     if name.lower() in ["summary", "recorder"]:
         """It is recorder"""
         name = "Recorder"
-        if state == 0:
-            state = 22
-        else:
-            state = 21
+        state = 22 if state == 0 else 21
+    elif Client.current_node != node_name and state == 0:
+        state = 12
+        Client.current_node = node_name
+    elif Client.current_node != node_name:
+        assert False
     else:
-        if Client.current_node != node_name and state == 0:
-            state = 12
-            Client.current_node = node_name
-        elif Client.current_node != node_name and state != 0:
-            assert False
-        else:
-            state = 10 + state
+        state = 10 + state
     Client.send_server(str([state, name, chunk, node_name, 50]))
 
 
@@ -61,10 +57,26 @@ if __name__ == "__main__":
         Client.send_server = client.send_message
         client.send_message(
             {
-                "agents_name": ['Elmo','Abby', 'Zoe', 'Ernie', 'Bert', 'Oscar'],
-                "nodes_name": ['Node 1','Node 2','Node 3', 'Node 4', 'state1', 'state2', 'state3', 'state4'],
-                "output_file_path": f"{os.getcwd()+'/novel_outline'}",
-                "requirement": NOVEL_PROMPT['Node 1']["task"]
+                "agents_name": [
+                    'Elmo',
+                    'Abby',
+                    'Zoe',
+                    'Ernie',
+                    'Bert',
+                    'Oscar',
+                ],
+                "nodes_name": [
+                    'Node 1',
+                    'Node 2',
+                    'Node 3',
+                    'Node 4',
+                    'state1',
+                    'state2',
+                    'state3',
+                    'state4',
+                ],
+                "output_file_path": f"{f'{os.getcwd()}/novel_outline'}",
+                "requirement": NOVEL_PROMPT['Node 1']["task"],
             }
         )
         client.listening_for_start_()
@@ -86,11 +98,11 @@ if __name__ == "__main__":
     print("done")
 
     create_sop()
-    
+
     with open("novel_outline.json", 'r') as f:
         data = json.load(f)
     name_list = list(data["agents"].keys())
-    
+
     show_in_gradio(30, str(name_list), " ", " ")
 
     agents,sop,environment = init("novel_outline.json")

@@ -24,7 +24,7 @@ class CodeUI(WebUI):
     ):
         super(CodeUI, self).__init__(client_cmd, socket_host, socket_port, bufsize, ui_name)
         self.first_recieve_from_client()
-        self.data_history = list()
+        self.data_history = []
         self.caller = 0
     
     def construct_ui(self):
@@ -125,8 +125,9 @@ class CodeUI(WebUI):
             self.data_history.append({agent_name: token})
         else:
             assert False, "Invalid state."
-        render_data = self.render_bubble(history, self.data_history, node_name, render_node_name=True)
-        return render_data
+        return self.render_bubble(
+            history, self.data_history, node_name, render_node_name=True
+        )
     
     def btn_send_when_click(self, chatbot, text_requirement, mode):
         """
@@ -154,7 +155,7 @@ class CodeUI(WebUI):
         outputs=[self.file, self.chatbot, self.chat_code_show, self.btn_start, self.btn_reset, self.text_requirement, self.btn_next]
         """
         if self.caller == 0:
-            self.data_history = list()
+            self.data_history = []
         self.caller = 0
         receive_server = self.receive_server
         while True:
@@ -169,30 +170,30 @@ class CodeUI(WebUI):
                     # finish
                     fs = [self.cache['pwd']+'/output_code/'+_ for _ in os.listdir(self.cache['pwd']+'/output_code')]
                     yield gr.File.update(value=fs, visible=True, interactive=True),\
-                        history, \
-                        gr.Chatbot.update(visible=True),\
-                        gr.Button.update(visible=True, interactive=True, value="Start"),\
-                        gr.Button.update(visible=True, interactive=True),\
-                        gr.Textbox.update(visible=True, interactive=True, placeholder="Please input your requirement", value=""),\
-                        gr.Button.update(visible=False)
+                            history, \
+                            gr.Chatbot.update(visible=True),\
+                            gr.Button.update(visible=True, interactive=True, value="Start"),\
+                            gr.Button.update(visible=True, interactive=True),\
+                            gr.Textbox.update(visible=True, interactive=True, placeholder="Please input your requirement", value=""),\
+                            gr.Button.update(visible=False)
                     return
                 elif state == 98:
                     yield gr.File.update(visible=False),\
-                        history, \
-                        gr.Chatbot.update(visible=False),\
-                        gr.Button.update(visible=True, interactive=False),\
-                        gr.Button.update(visible=True, interactive=True),\
-                        gr.Textbox.update(visible=True, interactive=False),\
-                        gr.Button.update(visible=True, value=f"Next Agent: 🤖{agent_name} | Next Node: ⭕{node_name}")
+                            history, \
+                            gr.Chatbot.update(visible=False),\
+                            gr.Button.update(visible=True, interactive=False),\
+                            gr.Button.update(visible=True, interactive=True),\
+                            gr.Textbox.update(visible=True, interactive=False),\
+                            gr.Button.update(visible=True, value=f"Next Agent: 🤖{agent_name} | Next Node: ⭕{node_name}")
                     return
                 history = self.handle_message(history, state, agent_name, token, node_name)
                 yield gr.File.update(visible=False),\
-                    history, \
-                    gr.Chatbot.update(visible=False),\
-                    gr.Button.update(visible=True, interactive=False),\
-                    gr.Button.update(visible=False, interactive=False),\
-                    gr.Textbox.update(visible=True, interactive=False),\
-                    gr.Button.update(visible=False)
+                        history, \
+                        gr.Chatbot.update(visible=False),\
+                        gr.Button.update(visible=True, interactive=False),\
+                        gr.Button.update(visible=False, interactive=False),\
+                        gr.Textbox.update(visible=True, interactive=False),\
+                        gr.Button.update(visible=False)
     
     def btn_reset_when_click(self):
         """

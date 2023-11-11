@@ -27,7 +27,7 @@ class NovelUI(WebUI):
         gc.add_agent(self.agent_name)
     
     def handle_message(self, history:list, record:list, state, agent_name, token, node_name):
-        RECORDER = True if state//10 ==2 else False
+        RECORDER = state//10 == 2
         render_data:list = record if RECORDER else history
         data:list = self.data_recorder if RECORDER else self.data_history
         if state % 10 == 0:
@@ -187,14 +187,15 @@ class NovelUI(WebUI):
             for _ in os.listdir(self.cache['output_file_path']):
                 if os.path.isfile(self.cache['output_file_path']+'/'+_):
                     files.append(self.cache['output_file_path']+'/'+_)
-            
+
             return files
+
         """
         inputs=[self.chatbot, self.chat_record],
         outputs=[self.progress, self.chatbot, self.chat_record, self.chat_show, self.btn_start, self.btn_reset, self.text_requirement, self.file_show]
         """
-        self.data_recorder = list()
-        self.data_history = list()
+        self.data_recorder = []
+        self.data_history = []
         receive_server = self.receive_server
         while True:
             data_list: List = receive_server.send(None)
@@ -216,25 +217,25 @@ class NovelUI(WebUI):
                 if state == 99:
                     # finish
                     yield gr.HTML.update(value=self.update_progress(node_name, node_schedule)),\
-                        history,\
-                        gr.Chatbot.update(visible=True, value=record),\
-                        gr.Chatbot.update(visible=True),\
-                        gr.Button.update(visible=True, interactive=False, value="Done"),\
-                        gr.Button.update(visible=True, interactive=True),\
-                        gr.Textbox.update(visible=True, interactive=False),\
-                        gr.File.update(value=fs, visible=True, interactive=True)
+                            history,\
+                            gr.Chatbot.update(visible=True, value=record),\
+                            gr.Chatbot.update(visible=True),\
+                            gr.Button.update(visible=True, interactive=False, value="Done"),\
+                            gr.Button.update(visible=True, interactive=True),\
+                            gr.Textbox.update(visible=True, interactive=False),\
+                            gr.File.update(value=fs, visible=True, interactive=True)
                     return
-                
+
                 history, record = self.handle_message(history, record, state, agent_name, token, node_name)
                 # [self.progress, self.chatbot, self.chat_record, self.chat_show, self.btn_start, self.btn_reset, self.text_requirement, self.file_show]
                 yield gr.HTML.update(value=self.update_progress(node_name, node_schedule)),\
-                        history,\
-                        gr.Chatbot.update(visible=True, value=record),\
-                        gr.Chatbot.update(visible=False),\
-                        gr.Button.update(visible=True, interactive=False),\
-                        gr.Button.update(visible=False, interactive=True),\
-                        gr.Textbox.update(visible=True, interactive=False),\
-                        gr.File.update(value=fs, visible=True, interactive=True)
+                            history,\
+                            gr.Chatbot.update(visible=True, value=record),\
+                            gr.Chatbot.update(visible=False),\
+                            gr.Button.update(visible=True, interactive=False),\
+                            gr.Button.update(visible=False, interactive=True),\
+                            gr.Textbox.update(visible=True, interactive=False),\
+                            gr.File.update(value=fs, visible=True, interactive=True)
     
     def btn_reset_when_click(self):
         """
