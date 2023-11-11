@@ -48,7 +48,7 @@ class FirstNode(Node):
         #     self.print(agent_name=self.start_agent_name)
 
     def communicate(self):
-        for turn in range(2):
+        for _ in range(2):
             for agent_name in ["Zoe", "Abby", "Elmo"]:
                 history = self.recorder.prepare(
                     agent_name=agent_name,
@@ -127,32 +127,18 @@ class FirstNode(Node):
             json.dump(characters_card, json_file, ensure_ascii=False)
             print("Save Successfully")
         # 2. converted to markdown
-        return_content = "<CHARACTERS>\n# Character\n> There are a total of {} characters\n\n".format(
-            data_dict['CHARACTERS']['TOTAL NUMBER'],
-        )
+        return_content = f"<CHARACTERS>\n# Character\n> There are a total of {data_dict['CHARACTERS']['TOTAL NUMBER']} characters\n\n"
         cnt = 1
         for key in data_dict['CHARACTERS']:
             """default success"""
             if 'CHARACTER' in key:
-                return_content += "## Character{}\n- Gender: {}\n- Name: {}\n- Age: {}\n- Work: {}\n- Personality: {}\n- Speaking Style: {}\n- Relation with Others: {}\n- Background: {}\n\n".format(
-                    cnt, data_dict['CHARACTERS'][key]['GENDER'], data_dict['CHARACTERS'][key]['NAME'],
-                    data_dict['CHARACTERS'][key]['AGE'],
-                    data_dict['CHARACTERS'][key]['WORK'],
-                    data_dict['CHARACTERS'][key]['PERSONALITY'], data_dict['CHARACTERS'][key]['SPEECH STYLE'],
-                    data_dict['CHARACTERS'][key]['RELATION'],
-                    data_dict['CHARACTERS'][key]['BACKGROUND']
-                )
+                return_content += f"## Character{cnt}\n- Gender: {data_dict['CHARACTERS'][key]['GENDER']}\n- Name: {data_dict['CHARACTERS'][key]['NAME']}\n- Age: {data_dict['CHARACTERS'][key]['AGE']}\n- Work: {data_dict['CHARACTERS'][key]['WORK']}\n- Personality: {data_dict['CHARACTERS'][key]['PERSONALITY']}\n- Speaking Style: {data_dict['CHARACTERS'][key]['SPEECH STYLE']}\n- Relation with Others: {data_dict['CHARACTERS'][key]['RELATION']}\n- Background: {data_dict['CHARACTERS'][key]['BACKGROUND']}\n\n"
                 cnt += 1
-        return_content += "</CHARACTERS>\n\n<OUTLINE>\n# outline\n> There are a total of {} chapters\n\n".format(
-            data_dict['OUTLINE']['TOTAL NUMBER']
-        )
+        return_content += f"</CHARACTERS>\n\n<OUTLINE>\n# outline\n> There are a total of {data_dict['OUTLINE']['TOTAL NUMBER']} chapters\n\n"
         cnt = 1
         for key in data_dict['OUTLINE']:
             if 'SECTION' in key:
-                return_content += "## Chapter {} {}\n- Characters Involved: {}\n- Story Summary: {}\n\n".format(
-                    cnt, data_dict['OUTLINE'][key]['TITLE'], data_dict['OUTLINE'][key]['CHARACTER INVOLVED'],
-                    data_dict['OUTLINE'][key]['ABSTRACT']
-                )
+                return_content += f"## Chapter {cnt} {data_dict['OUTLINE'][key]['TITLE']}\n- Characters Involved: {data_dict['OUTLINE'][key]['CHARACTER INVOLVED']}\n- Story Summary: {data_dict['OUTLINE'][key]['ABSTRACT']}\n\n"
                 cnt += 1
         return_content += "</OUTLINE>"
         return return_content
@@ -203,10 +189,7 @@ class SecondNode(Node):
         self.output_memory = []
         for turn in range(2):
             for agent_name in ["Oscar", "Bert", "Ernie"]:
-                if agent_name == "Bert":
-                    MyAgent.TEMPERATURE = 0.3
-                else:
-                    MyAgent.TEMPERATURE = turn*0.1 + 0.5
+                MyAgent.TEMPERATURE = 0.3 if agent_name == "Bert" else turn*0.1 + 0.5
                 history = self.recorder.prepare(
                     agent_name=agent_name,
                     agents=self.agents,
@@ -291,19 +274,18 @@ def generate_first_agents(task_prompt:str=None) -> Tuple[List[MyAgent], MyAgent]
         NOVEL_PROMPT["Node 1"]["task"] = task_prompt
     prompts_task = prompts_set["task"]
     prompts_agents = prompts_set["agents"]
-    agents_list = []
-    for agent_name in prompts_agents:
-        agents_list.append(
-            MyAgent(
-                name=agent_name,
-                SYSTEM_PROMPT=prompts_agents[agent_name]["system"].format(
-                    prompts_task, prompts_agents[agent_name]["output"]
-                ),
-                query=prompts_agents[agent_name]["query"].format(
-                    prompts_agents[agent_name]["output"]
-                )
-            )
+    agents_list = [
+        MyAgent(
+            name=agent_name,
+            SYSTEM_PROMPT=prompts_agents[agent_name]["system"].format(
+                prompts_task, prompts_agents[agent_name]["output"]
+            ),
+            query=prompts_agents[agent_name]["query"].format(
+                prompts_agents[agent_name]["output"]
+            ),
         )
+        for agent_name in prompts_agents
+    ]
     summary_agent = MyAgent(
         name="summary",
         SYSTEM_PROMPT=prompts_set["summary"]["system"].format(
@@ -318,19 +300,18 @@ def generate_second_agents() -> Tuple[List[MyAgent], MyAgent]:
     prompts_set = NOVEL_PROMPT["Node 2"]
     prompts_task = prompts_set["task"]  # .format(outline, other)
     prompts_agents = prompts_set["agents"]
-    agents_list = []
-    for agent_name in prompts_agents:
-        agents_list.append(
-            MyAgent(
-                name=agent_name,
-                SYSTEM_PROMPT=prompts_agents[agent_name]["system"].format(
-                    prompts_task, prompts_agents[agent_name]["output"]
-                ),
-                query=prompts_agents[agent_name]["query"].format(
-                    prompts_agents[agent_name]["output"]
-                )
-            )
+    agents_list = [
+        MyAgent(
+            name=agent_name,
+            SYSTEM_PROMPT=prompts_agents[agent_name]["system"].format(
+                prompts_task, prompts_agents[agent_name]["output"]
+            ),
+            query=prompts_agents[agent_name]["query"].format(
+                prompts_agents[agent_name]["output"]
+            ),
         )
+        for agent_name in prompts_agents
+    ]
     summary_agent = MyAgent(
         name="summary",
         SYSTEM_PROMPT=prompts_set["summary"]["system"].format(
@@ -363,20 +344,18 @@ def run_node_1(stream_output:bool=False, output_func=None,
 def run_node_2(outline, node_start_index=2, stream_output:bool=False, output_func=None):
     num2cn = ["ONE","TWO","THREE","FOUR","FIVE","SIX","SEVEN","EIGHT","NINE","TEN","ELEVEN","TWELVE"]
     def generate_task_end_prompt(memory: list) -> str:
-        if len(memory) == 0:
+        if not memory:
             return "\nThere are 5 chapters in total, please enrich the plot of the first chapter according to the outline above, taking care to be storytelling, logical, mainly in third person point of view, not involving description of dialogues, and without empty words. The plot of the first chapter is at least 800 words."
-        else:
-            start_prompt = f"\nThe following are the contents of chapter {', '.join(num2cn[0:len(memory)])}, which have been expanded: \n<EXPANDED>\n"
-            for i in range(len(memory)):
-                start_prompt = f"\n{start_prompt}<CHAPTER {i+1}>\n{memory[i]}\n</CHAPTER {i+1}>"
-            start_prompt += "\n</EXPANDED>\n"
-            end_prompt = f"\nPlease, based on the outline above and the content of chapter {', '.join(num2cn[0:len(memory)])}, which have been expanded, to enrich the plot of chapter {num2cn[len(memory)]}, " \
-                         f"Content is noted to be storytelling, logical, and in the third person point of view, not involving descriptions of dialog, and without empty words. The plot of chapter {num2cn[len(memory)]} is at least 800 words."
-            return start_prompt + end_prompt
+        start_prompt = f"\nThe following are the contents of chapter {', '.join(num2cn[:len(memory)])}, which have been expanded: \n<EXPANDED>\n"
+        for i in range(len(memory)):
+            start_prompt = f"\n{start_prompt}<CHAPTER {i+1}>\n{memory[i]}\n</CHAPTER {i+1}>"
+        start_prompt += "\n</EXPANDED>\n"
+        end_prompt = f"\nPlease, based on the outline above and the content of chapter {', '.join(num2cn[:len(memory)])}, which have been expanded, to enrich the plot of chapter {num2cn[len(memory)]}, Content is noted to be storytelling, logical, and in the third person point of view, not involving descriptions of dialog, and without empty words. The plot of chapter {num2cn[len(memory)]} is at least 800 words."
+        return start_prompt + end_prompt
 
-    output_memory = []      
+    output_memory = []
     start_agent_names = ["Ernie", "Ernie", "Ernie", "Ernie", "Ernie"]
-    start_agent_queries = [f"Let's start by expanding on chapter {num2cn[i]} as required" for i in range(5)] 
+    start_agent_queries = [f"Let's start by expanding on chapter {num2cn[i]} as required" for i in range(5)]
     ORIGIN_TASK_PROMPT = NOVEL_PROMPT["Node 2"]["task"]
     ORIGIN_QUERY_PROMPT = {}
     ORIGIN_SUMMARY_PROMPT = NOVEL_PROMPT["Node 2"]["summary"]["query"]
@@ -397,7 +376,7 @@ def run_node_2(outline, node_start_index=2, stream_output:bool=False, output_fun
         NOVEL_PROMPT["Node 2"]["summary"]["query"] = ORIGIN_SUMMARY_PROMPT.format(num2cn[idx], num2cn[idx], "{}")   
         start_agent_name = start_agent_names[idx]
         start_agent_query = start_agent_queries[idx]
-        
+
         print(f"node {node_idx} starting ......")
         second_agents, second_summary = generate_second_agents()
         second_node = SecondNode(
@@ -410,7 +389,7 @@ def run_node_2(outline, node_start_index=2, stream_output:bool=False, output_fun
             stream_output=stream_output,
             output_func=output_func
         )
-        
+
         output_memory.append(
             second_node.run()
         )
@@ -419,25 +398,21 @@ def run_node_2(outline, node_start_index=2, stream_output:bool=False, output_fun
 def show_in_gradio(state, name, chunk, node_name):
 
     if state == 30:
-        Client.server.send(str([state, name, chunk, node_name])+"<SELFDEFINESEP>")
+        Client.server.send(f"{[state, name, chunk, node_name]}<SELFDEFINESEP>")
         return
 
     if name.lower() in ["summary", "recorder"]:
         """It is recorder"""
         name = "Recorder"
-        if state == 0:
-            state = 22
-        else:
-            state = 21
+        state = 22 if state == 0 else 21
+    elif Client.current_node != node_name and state == 0:
+        state = 12
+        Client.current_node = node_name
+    elif Client.current_node != node_name:
+        assert False
     else:
-        if Client.current_node != node_name and state == 0:
-            state = 12
-            Client.current_node = node_name
-        elif Client.current_node != node_name and state != 0:
-            assert False
-        else:
-            state = 10 + state
-    Client.server.send(str([state, name, chunk, node_name])+"<SELFDEFINESEP>")
+        state = 10 + state
+    Client.server.send(f"{[state, name, chunk, node_name]}<SELFDEFINESEP>")
 
 
 if __name__ == '__main__':

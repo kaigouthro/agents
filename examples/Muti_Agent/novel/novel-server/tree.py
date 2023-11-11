@@ -24,26 +24,19 @@ class Tree:
 
     def isNodeIn(self, node1:TreeNode, node2:TreeNode):
 
-        if node1.item.start > node2.item.start and node1.item.end < node2.item.end:
-            return True
-        return False
+        return node1.item.start > node2.item.start and node1.item.end < node2.item.end
 
     def insert(self, new_node: TreeNode, current_node: TreeNode):
         if len(current_node.sons) == 0:
 
-            if self.isNodeIn(new_node, current_node):
-
-                current_node.sons.append(new_node)
-                new_node.parent = current_node
-                return True
-            else:
-
+            if not self.isNodeIn(new_node, current_node):
                 return False
+            current_node.sons.append(new_node)
+            new_node.parent = current_node
+            return True
         for son in current_node.sons:
 
-            done = self.insert(new_node, son)
-
-            if done:
+            if done := self.insert(new_node, son):
                 return True
         if self.isNodeIn(new_node, current_node):
             current_node.sons.append(new_node)
@@ -53,9 +46,7 @@ class Tree:
             return False
 
     def node_count(self):
-        cnt = 0
-        if self.root is not None:
-            cnt = 1
+        cnt = 1 if self.root is not None else 0
         sons = self.root.sons
         while len(sons) > 0:
             current: TreeNode = sons.pop()
@@ -65,7 +56,7 @@ class Tree:
         return cnt
 
     def reset_state(self, reset_value, current_node:TreeNode=None):
-        if current_node == None:
+        if current_node is None:
             current_node = self.root
         current_node.state = reset_value
         for i in range(len(current_node.sons)):
@@ -80,8 +71,10 @@ class Tree:
         ]
 
     def build_dict(self, current_dict:dict, current_root:TreeNode, filter_value:list=None, mode:str="filter"):
-        assert mode.lower() in ["filter", "remain"], \
-            f"mode `{mode}` is not in ['filter', 'remain']"
+        assert mode.lower() in {
+            "filter",
+            "remain",
+        }, f"mode `{mode}` is not in ['filter', 'remain']"
 
         if len(current_root.sons) == 0:
 
@@ -89,18 +82,18 @@ class Tree:
                 return {current_root.item.value: self.get_node_content(current_root)}
             if mode.lower() == "filter" and current_root.item.value in filter_value:
                 return None
-            elif mode.lower() == "filter" and current_root.item.value not in filter_value:
+            elif mode.lower() == "filter":
                 return {current_root.item.value: self.get_node_content(current_root)}
             elif mode.lower() == "remain" and current_root.item.value in filter_value:
                 return {current_root.item.value: self.get_node_content(current_root)}
-            elif mode.lower() == "remain" and current_root.item.value not in filter_value:
+            elif mode.lower() == "remain":
                 return None
         else:
             if filter_value is not None:
                 if mode.lower() == "filter" and current_root.item.value in filter_value:
                     return None
-                if self.first_label:
-                    if mode.lower() == "remain" and current_root.item.value not in filter_value and current_root.item.value != "root" and current_root.state==0:
+                if mode.lower() == "remain" and current_root.item.value not in filter_value and current_root.item.value != "root" and current_root.state==0:
+                    if self.first_label:
                         return None
             current_dict[current_root.item.value] = {}
             for i in range(len(current_root.sons)):
@@ -123,26 +116,28 @@ class Tree:
                     current_dict[current_root.item.value].update(item)
 
     def build_xml(self, current_item: list, current_root:TreeNode, filter_value:list=None, mode:str="filter"):
-        assert mode.lower() in ["filter", "remain"], \
-            f"mode `{mode}` is not in ['filter', 'remain']"
+        assert mode.lower() in {
+            "filter",
+            "remain",
+        }, f"mode `{mode}` is not in ['filter', 'remain']"
         if len(current_root.sons) == 0:
 
             if filter_value is None or (mode.lower() == "remain" and current_root.state == 1):
                 return f"<{current_root.item.value}>{self.get_node_content(current_root)}</{current_root.item.value}>"
             if mode.lower() == "filter" and current_root.item.value in filter_value:
                 return None
-            elif mode.lower() == "filter" and current_root.item.value not in filter_value:
+            elif mode.lower() == "filter":
                 return f"<{current_root.item.value}>{self.get_node_content(current_root)}</{current_root.item.value}>"
             elif mode.lower() == "remain" and current_root.item.value in filter_value:
                 return f"<{current_root.item.value}>{self.get_node_content(current_root)}</{current_root.item.value}>"
-            elif mode.lower() == "remain" and current_root.item.value not in filter_value:
+            elif mode.lower() == "remain":
                 return None
         else:
             if filter_value is not None:
                 if mode.lower() == "filter" and current_root.item.value in filter_value:
                     return None
-                if self.first_label:
-                    if mode.lower() == "remain" and current_root.item.value not in filter_value and current_root.item.value != "root" and current_root.state==0:
+                if mode.lower() == "remain" and current_root.item.value not in filter_value and current_root.item.value != "root" and current_root.state==0:
+                    if self.first_label:
                         return None
             current_item.append(f"<{current_root.item.value}>")
             for i in range(len(current_root.sons)):
@@ -165,7 +160,7 @@ class Tree:
                     current_item.append(f"{item}")
             current_item.append(f"</{current_root.item.value}>")
 
-def extract_tag_names(text: str, sort:bool=True)->List[Tuple[str, int, int]]:
+def extract_tag_names(text: str, sort:bool=True) -> List[Tuple[str, int, int]]:
 
     pattern = r'<([^<>]+)>'
 
@@ -188,18 +183,13 @@ def extract_tag_names(text: str, sort:bool=True)->List[Tuple[str, int, int]]:
         if item[0] != '/':
             stack_item.append(item)
             stack_pos.append(pos[idx])
-        else:
-            end_pos = pos[idx]
+        elif item[1:] in stack_item:
+            while stack_item[-1] != item[1:]:
+                stack_item.pop()
+                stack_pos.pop()
 
-            if item[1:] in stack_item:
-                while stack_item[-1] != item[1:]:
-                    stack_item.pop()
-                    stack_pos.pop()
-
-                answer.append((stack_item.pop(), stack_pos.pop(), end_pos))
-    if sort:
-        return sorted(answer, key=lambda x: x[1])
-    return answer
+            answer.append((stack_item.pop(), stack_pos.pop(), pos[idx]))
+    return sorted(answer, key=lambda x: x[1]) if sort else answer
 
 def construct_tree(text, add_root_label:bool=True):
     if add_root_label:
@@ -213,11 +203,8 @@ def construct_tree(text, add_root_label:bool=True):
             Item(*d)
         )
         nodes_list.append(new_node)
-    for i in range(len(nodes_list)):
-        tree.insert(
-            new_node=nodes_list[i],
-            current_node=tree.root
-        )
+    for nodes in nodes_list:
+        tree.insert(new_node=nodes, current_node=tree.root)
     return tree
 
 def tree2dict(tree:Tree, filter:list=None, mode="filter"):

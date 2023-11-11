@@ -9,7 +9,7 @@ class Memory:
         return {"role":role,"content":self.content}
     
     @classmethod
-    def get_chat_history(self,messages,agent_name =None):
+    def get_chat_history(cls, messages, agent_name =None):
         """
         Splice a memory list into a sentence
         input : 

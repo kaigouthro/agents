@@ -9,23 +9,17 @@ class State:
         self.next_states = {}
         self.name = kwargs["name"]
 
-        self.environment_prompt = (
-            kwargs["environment_prompt"] if "environment_prompt" in kwargs else ""
-        )
+        self.environment_prompt = kwargs.get("environment_prompt", "")
 
         self.roles = kwargs["roles"] if "roles" in kwargs else (list(kwargs["agent_states"].keys()) if "agent_states" in kwargs else [0])
         if len(self.roles) == 0:
             self.roles = [0]
-        self.begin_role = (
-            kwargs["begin_role"] if "begin_role" in kwargs else self.roles[0]
-        )
-        self.begin_query = kwargs["begin_query"] if "begin_query" in kwargs else None
+        self.begin_role = kwargs.get("begin_role", self.roles[0])
+        self.begin_query = kwargs.get("begin_query", None)
 
         self.is_begin = True
 
-        self.summary_prompt = (
-            kwargs["summary_prompt"] if "summary_prompt" in kwargs else None
-        )
+        self.summary_prompt = kwargs.get("summary_prompt", None)
         self.current_role = self.begin_role
         self.components = (
             self.init_components(kwargs["agent_states"])

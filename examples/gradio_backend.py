@@ -17,8 +17,7 @@ def process(action):
     send_role = action.role
     if not action.is_user:
         print(f"{send_name}({send_role}):{response}")
-    memory = Memory(send_role, send_name, response)
-    return memory
+    return Memory(send_role, send_name, response)
 
 def gradio_process(action,current_state):
     response = action.response
@@ -38,11 +37,14 @@ def gradio_process(action,current_state):
         if state == 30:
             # print("client: waiting for server")
             data: list = next(Client.receive_server)
-            content = ""
-            for item in data:
-                if item.startswith("<USER>"):
-                    content = item.split("<USER>")[1]
-                    break
+            content = next(
+                (
+                    item.split("<USER>")[1]
+                    for item in data
+                    if item.startswith("<USER>")
+                ),
+                "",
+            )
             # print(f"client: recieve `{content}` from server.")
             action.response = content
             break
@@ -73,11 +75,9 @@ def block_when_next(current_agent, current_state):
         return
     if Client.FIRST_RUN:
         Client.FIRST_RUN = False
-    else:
-        # block current process
-        if Client.mode == Client.SINGLE_MODE:
-            Client.send_server(str([98, f"{current_agent.name}({current_agent.state_roles[current_state.name]})", " ", current_state.name]))
-            data: list = next(Client.receive_server)
+    elif Client.mode == Client.SINGLE_MODE:
+        Client.send_server(str([98, f"{current_agent.name}({current_agent.state_roles[current_state.name]})", " ", current_state.name]))
+        data: list = next(Client.receive_server)
 
 # =======================
 

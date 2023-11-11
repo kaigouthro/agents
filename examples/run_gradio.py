@@ -27,8 +27,9 @@ class GeneralUI(WebUI):
             self.data_history.append({agent_name: token})
         else:
             assert False, "Invalid state."
-        render_data = self.render_bubble(history, self.data_history, node_name, render_node_name= True)
-        return render_data
+        return self.render_bubble(
+            history, self.data_history, node_name, render_node_name=True
+        )
     
     def __init__(
         self,
@@ -162,7 +163,7 @@ class GeneralUI(WebUI):
         outputs=[self.btn_start, self.btn_send, self.btn_reset, self.chatbot, self.text_input, self.btn_next]
         """
         if self.data_history is None:
-            self.data_history = list()
+            self.data_history = []
         receive_server = self.receive_server
         while True:
             data_list: List = receive_server.send(None)
@@ -176,37 +177,37 @@ class GeneralUI(WebUI):
                 if state == 99:
                     # finish
                     yield gr.Button.update(visible=False),\
-                        gr.Button.update(visible=True, interactive=False),\
-                        gr.Button.update(visible=True, interactive=True),\
-                        history,\
-                        gr.Textbox.update(visible=True, interactive=False),\
-                        gr.Button.update(visible=False)
+                            gr.Button.update(visible=True, interactive=False),\
+                            gr.Button.update(visible=True, interactive=True),\
+                            history,\
+                            gr.Textbox.update(visible=True, interactive=False),\
+                            gr.Button.update(visible=False)
                     return
                 elif state == 98:
                     # single mode
                     yield gr.Button.update(visible=False), \
-                            gr.Button.update(visible=False),\
-                            gr.Button.update(visible=True),\
-                            history,\
-                            gr.Textbox.update(visible=False),\
-                            gr.Button.update(visible=True, value=f"Next Agent: 🤖{agent_name} | Next Node: ⭕{node_name}")
+                                gr.Button.update(visible=False),\
+                                gr.Button.update(visible=True),\
+                                history,\
+                                gr.Textbox.update(visible=False),\
+                                gr.Button.update(visible=True, value=f"Next Agent: 🤖{agent_name} | Next Node: ⭕{node_name}")
                     return 
                 elif state == 30:
                     # user input
                     yield gr.Button.update(visible=False), \
-                            gr.Button.update(visible=True),\
-                            gr.Button.update(visible=True),\
-                            history,\
-                            gr.Textbox.update(visible=True, value=""),\
-                            gr.Button.update(visible=False)
+                                gr.Button.update(visible=True),\
+                                gr.Button.update(visible=True),\
+                                history,\
+                                gr.Textbox.update(visible=True, value=""),\
+                                gr.Button.update(visible=False)
                     return
                 history = self.handle_message(history, state, agent_name, token, node_name)
                 yield gr.Button.update(visible=False), \
-                    gr.Button.update(visible=False),\
-                    gr.Button.update(visible=False),\
-                    history,\
-                    gr.Textbox.update(visible=False),\
-                    gr.Button.update(visible=False)
+                        gr.Button.update(visible=False),\
+                        gr.Button.update(visible=False),\
+                        history,\
+                        gr.Textbox.update(visible=False),\
+                        gr.Button.update(visible=False)
     
     def btn_send_when_click(self, text_input, history):
         '''
@@ -214,13 +215,13 @@ class GeneralUI(WebUI):
         outputs=[self.btn_start, self.btn_send, self.btn_reset, self.chatbot, self.text_input, self.btn_next]
         '''
         history = self.handle_message(history, 10, 'User', text_input, self.current_node_name)
-        self.send_message("<USER>"+text_input+self.SIGN["SPLIT"])
+        self.send_message(f"<USER>{text_input}" + self.SIGN["SPLIT"])
         yield gr.Button.update(visible=False), \
-            gr.Button.update(visible=False),\
-            gr.Button.update(visible=False),\
-            history,\
-            gr.Textbox.update(visible=False),\
-            gr.Button.update(visible=False)
+                gr.Button.update(visible=False),\
+                gr.Button.update(visible=False),\
+                history,\
+                gr.Textbox.update(visible=False),\
+                gr.Button.update(visible=False)
         return
     
     def btn_send_after_click(self, text_input, history):

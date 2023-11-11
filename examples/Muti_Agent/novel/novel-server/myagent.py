@@ -98,10 +98,7 @@ class MyAgent(Agent):
     ):
         self.name = name
         self.SYSTEM_PROMPT = SYSTEM_PROMPT
-        self.messages: list = list()
-        self.messages.append(
-            {"role": "system", "content": self.SYSTEM_PROMPT}
-        )
+        self.messages: list = [{"role": "system", "content": self.SYSTEM_PROMPT}]
         self.messages_copy: list = copy.deepcopy(self.messages)
         self.query = query
 
@@ -113,7 +110,7 @@ class MyAgent(Agent):
     def send_message(self, recorder=None, mode="cut", stream=True):
         # print("sending...")
         assert self.messages[-1]["role"] in ["user", "system"], \
-            "please make sure the last role is user or system!"
+                "please make sure the last role is user or system!"
         while True:
             try:
                 # copy_message = copy.deepcopy(self.messages)
@@ -136,9 +133,6 @@ class MyAgent(Agent):
                     self.messages.append(
                         self._parse_response(completion)
                     )
-                    self.messages_copy.append(
-                        copy.deepcopy(self.messages[-1])
-                    )
                 else:
 
                     complete_response = ""
@@ -151,9 +145,9 @@ class MyAgent(Agent):
                     self.messages.append(
                         self._parse_response(complete_response)
                     )
-                    self.messages_copy.append(
-                        copy.deepcopy(self.messages[-1])
-                    )
+                self.messages_copy.append(
+                    copy.deepcopy(self.messages[-1])
+                )
                 if recorder is not None:
                     recorder.add(
                         agent_name=self.name,
@@ -162,13 +156,6 @@ class MyAgent(Agent):
                 break
             except Exception as e:
                 raise e
-                print_log(e)
-                if "maximum context length is" in str(e):
-                    print_log("maximum length exceeded! skip!")
-                    self.reduce_message(mode=mode, N=2)
-                else:
-                    print_log(f"Please wait {MyAgent.WAIT_TIME} seconds and resend later ...")
-                    time.sleep(MyAgent.WAIT_TIME)
 
 
 
@@ -201,34 +188,32 @@ class MyAgent(Agent):
 
 
     def get_message(self, index: int, function=None, source: str = "copy", **kwargs) -> str:
-        assert source in ["copy", "origin"]
+        assert source in {"copy", "origin"}
         assert len(self.messages) > index
         if function:
             if source == "copy":
                 return function(self.messages_copy[index]["content"], kwargs)
             elif source == "origin":
                 return function(self.messages[index]["content"], kwargs)
-        else:
-            if source == "copy":
-                return self.messages_copy[index]["content"]
-            elif source == "origin":
-                return self.messages[index]["content"]
+        elif source == "copy":
+            return self.messages_copy[index]["content"]
+        elif source == "origin":
+            return self.messages[index]["content"]
 
 
 
     def reduce_message(self, mode: str = "cut", N: int = 1, summary_agent=None):
         assert mode in MyAgent.__REDUCE_MODE__, \
-            f"mode `{mode}` is invalid."
+                f"mode `{mode}` is invalid."
         if mode == "cut":
-
             """system | user | assistant | user | assistant"""
-            for i in range(N):
+            for _ in range(N):
                 self.messages.pop(1)
             assert self.messages[-1]["role"] in ["user", "system"], \
-                "please make sure the last role is user or system!"
+                    "please make sure the last role is user or system!"
         elif mode == "summary":
             assert isinstance(summary_agent, MyAgent), \
-                "the summary agent is not class MyAgent."
+                    "the summary agent is not class MyAgent."
 
             # summary_agent.prepare_message()
 
@@ -244,14 +229,11 @@ class MyAgent(Agent):
                     complete_response = f"{complete_response}{chunk}"
                     if output_func is None:
                         print(chunk, end="")
+                    elif FIRST:
+                        output_func(0, self.name, chunk, node_name)
+                        FIRST = False
                     else:
-                        # print(chunk, end="")
-                        if FIRST:
-                            output_func(0, self.name, chunk, node_name)
-                            FIRST = False
-                        else:
-                            output_func(1, self.name, chunk, node_name)
-                        # yield complete_response, self.name
+                        output_func(1, self.name, chunk, node_name)
         else:
             next(self.send_message(recorder=recorder, stream=stream, mode=mode), None)
             if output_func is None:
@@ -262,7 +244,7 @@ class MyAgent(Agent):
 class Recorder:
     def __init__(self, agents: Dict[str, MyAgent]):
 
-        self.recorder: List = list()
+        self.recorder: List = []
         self.__AGENTS_NAME__ = []
         # 记录一下每个AGENT上次说话的时间，这样就不用一次一次的遍历了
         self.__AGENTS_SPEAK_TIME__ = {}
@@ -292,7 +274,7 @@ class Recorder:
     def prepare(self, agent_name: str, agents: Dict[str, MyAgent], return_dict: bool = False):
         if agent_name.lower() != "all":
             assert agent_name in self.__AGENTS_NAME__, \
-                f"There is no `MyAgent {agent_name}` in Recorder!"
+                    f"There is no `MyAgent {agent_name}` in Recorder!"
 
         history = ""
         history_dict = []
@@ -306,10 +288,7 @@ class Recorder:
             )
             history = f"{history}\n<{his_ag_name.upper()}>\n{agents[his_ag_name].get_message(his_ag_index, source='copy')}\n</{his_ag_name.upper()}>\n"
             # history = f"{history}\n{agent_name}: {agents[his_ag_name].get_message(his_ag_index, source='copy')}\n"
-        if return_dict:
-            return history_dict
-        else:
-            return history.strip()
+        return history_dict if return_dict else history.strip()
 
 class Node(State):
 
@@ -349,12 +328,8 @@ class Node(State):
 
     def save_history(self, save_path=None):
         if save_path is None:
-            save_path = f"./Node2.json"
-        results = []
-        for agent_name in self.agents:
-            results.append(
-                self.agents[agent_name].messages_copy
-            )
+            save_path = "./Node2.json"
+        results = [self.agents[agent_name].messages_copy for agent_name in self.agents]
         json.dump(
             results,
             open(save_path, "w")
